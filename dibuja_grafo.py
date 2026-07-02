@@ -19,7 +19,7 @@ $pip install pillow
 
 """
 
-__author__ = 'Escribe aquí tu nombre'
+__author__ = 'Oliver Ruiz Betran'
 
 import blocales
 import random
@@ -140,10 +140,10 @@ class problema_grafica_grafo(blocales.Problema):
 
         # Inicializa fáctores lineales para los criterios más importantes
         # (default solo cuanta el criterio 1)
-        K1 = 1.0
-        K2 = 0.0
-        K3 = 0.0
-        K4 = 0.0
+        K1 = 0.1
+        K2 = 0.5
+        K3 = 0.2
+        K4 = 0.2
 
         # Genera un diccionario con el estado y la posición
         estado_dic = self.estado2dic(estado)
@@ -172,8 +172,6 @@ class problema_grafica_grafo(blocales.Problema):
         # los subcriterios. ¿Que valores de diste a K1, K2 y K3 respectivamente?
         # 
         # Justifica tu criterio
-  
-
     def numero_de_cruces(self, estado_dic):
         """
         Devuelve el numero de veces que dos aristas se cruzan en el grafo
@@ -270,26 +268,76 @@ class problema_grafica_grafo(blocales.Problema):
         # Agrega el método que considere el angulo entre aristas de
         # cada vertice. Dale diferente peso a cada criterio hasta
  
-        return 0
+        total = 0
+        for v in self.vertices:
+            aristas_v = [
+                (u1 if u2 == v else u2)
+                for (u1, u2) in self.aristas
+                if v in (u1, u2)
+            ]
+            for i in range(len(aristas_v)):
+                for j in range(i + 1, len(aristas_v)):
+                    (xv, yv) = estado_dic[v]
+                    (xu1, yu1) = estado_dic[aristas_v[i]]
+                    (xu2, yu2) = estado_dic[aristas_v[j]]
+
+                    ax, ay = xu1 - xv, yu1 - yv
+                    bx, by = xu2 - xv, yu2 - yv
+
+                    mag_a = math.sqrt(ax**2 + ay**2)
+                    mag_b = math.sqrt(bx**2 + by**2)
+
+                    if mag_a < 1e-7 or mag_b < 1e-7:
+                        continue
+
+                    cos_theta = (ax*bx + ay*by) / (mag_a * mag_b)
+                    cos_theta = max(-1.0, min(1.0, cos_theta))
+                    theta = math.acos(cos_theta)
+
+                    if theta < math.pi / 6:
+                        total += (1.0 - theta / (math.pi / 6))
+        return total
+
 
     def criterio_propio(self, estado_dic):
         """
-        Implementa y comenta correctamente un criterio de costo que sea
-        conveniente para que un grafo luzca bien.
-
-        @param estado_dic: Diccionario cuyas llaves son los vértices
-                           del grafo y cuyos valores es una tupla con
-                           la posición (x, y) de ese vértice en el
-                           dibujo.
-
-        @return: Un número.
-
+        Penaliza que una arista se superponga con otra mientras más cerca esté
+        un vertice de otro más feo se ve el grafo porque se confunde.        
+        La penalización es proporcional a qué tan cerca está el vértice
+        de la arista, usando una distancia mínima de 20 pixeles.
         """
-        # Desarrolla un criterio propio y ajusta su importancia en el
-        # costo total con K4 ¿Mejora el resultado? ¿En que mejora el
-        # resultado final?
+        total = 0
+        min_dist = 20  
 
-        return 0
+        for (u1, u2) in self.aristas:
+            (x1, y1) = estado_dic[u1]
+            (x2, y2) = estado_dic[u2]
+
+            for v in self.vertices:
+                if v == u1 or v == u2:
+                    continue
+
+                (xv, yv) = estado_dic[v]
+                
+                dx, dy = x2 - x1, y2 - y1
+                largo_cuadrado = dx**2 + dy**2
+
+                if largo_cuadrado < 1e-7:
+                    continue  
+
+                t = max(0.0, min(1.0, 
+                    ((xv - x1) * dx + (yv - y1) * dy) / largo_cuadrado
+                ))
+
+                px = x1 + t * dx
+                py = y1 + t * dy
+
+                dist = math.sqrt((xv - px)**2 + (yv - py)**2)
+
+                if dist < min_dist:
+                    total += (1.0 - dist / min_dist)
+
+        return total
 
     def estado2dic(self, estado):
         """
