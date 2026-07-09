@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 Prueba de los algoritmos genéticos utilizando el problema
@@ -12,7 +11,7 @@ from random import shuffle
 import genetico
 import genetico_tarea
 
-__author__ = 'juliowaissman'
+__author__ = 'Oliver Ruiz Beltran'
 
 class ProblemaNreinas(genetico.Problema):
     """
@@ -84,16 +83,27 @@ if __name__ == "__main__":
     #   -- ¿Cuales son en cada caso los mejores valores?  (escribelos
     #       abajo de esta linea)
     #
+    ###
+    #Reinas     n_poblacion     generaciones     mutacion
+    #   8           50              10              .03
+    #   16          100             200             .04
+    #   32          300             200             .03
+    #   64          400             300             .02
+    #   128         900             850             .015
+    ###
     #
     #   -- ¿Que reglas podrías establecer para asignar valores segun
     #       tu experiencia?
+    ###
+    # el tamaño de la poblacion depende del tamaño del problema entre mas grande mayor es la poblacion ,probar si se puede con menos generaciones de forma manual, disminuir la mutacion mientras mas grande es el problema y aumentar progresivamente poblacion y generaciones
+    ###
     #
 
-    n_poblacion = 64
-    generaciones = 100
-    prob_mutacion = 0.05
+    n_poblacion = 900
+    generaciones = 850
+    prob_mutacion = 0.015 
 
-    alg_gen = genetico.GeneticoPermutaciones(ProblemaNreinas(16),
+    alg_gen = genetico.GeneticoPermutaciones(ProblemaNreinas(128),
                                              n_poblacion, prob_mutacion)
 
     solucion = prueba_genetico(alg_gen, generaciones, True)
