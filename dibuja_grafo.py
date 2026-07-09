@@ -112,10 +112,11 @@ class problema_grafica_grafo(blocales.Problema):
 
         """
         vecino = list(estado)
-        i = random.randint(0, len(vecino) - 1)
-        vecino[i] = max(10,
-                        min(self.dim - 10,
-                            vecino[i] + random.randint(-dmax,  dmax)))
+
+        i = random.randint(0, len(self.vertices) - 1)
+        vecino[2 * i]     = random.randint(10, self.dim - 10)  
+        vecino[2 * i + 1] = random.randint(10, self.dim - 10)  
+
         return tuple(vecino)
 
         
@@ -123,6 +124,8 @@ class problema_grafica_grafo(blocales.Problema):
         #
         # Propon una manera alternativa de vecino_aleatorio y muestra que
         # con tu propuesta se obtienen resultados mejores o en menor tiempo
+        ###
+        #Tiene un tiempo menor pero si se usa el calendarizador geométrico tiene mejores resultados aunque tarde mas
 
     def costo(self, estado):
         """
@@ -140,7 +143,7 @@ class problema_grafica_grafo(blocales.Problema):
 
         # Inicializa fáctores lineales para los criterios más importantes
         # (default solo cuanta el criterio 1)
-        K1 = 0.1
+        K1 = 0.2
         K2 = 0.5
         K3 = 0.2
         K4 = 0.2
@@ -170,8 +173,14 @@ class problema_grafica_grafo(blocales.Problema):
         #
         # Al final, es necesario darle un peso lineal a cada uno de
         # los subcriterios. ¿Que valores de diste a K1, K2 y K3 respectivamente?
-        # 
         # Justifica tu criterio
+        ###
+        # K1 = 0.1 porque un grafo se ve bonito cuando tiene algunos cruces pero si tiene muchos se ve desordenado por eso tiene un numero pequeño K1
+        # K2 = 0.5 porque entre mas juntos estan los vertices menos se aprecian y se ven aleatorios, por eso es el mas grande al ser el mas prioritarios
+        # K3 = 0.2 porque los angulos muy pequeños se ven muy abultados y si los hace mas feos
+        # K4 = 0.2 porque si se juntan 2 aristas no se etiende el grafo y confunde
+        ### 
+        
     def numero_de_cruces(self, estado_dic):
         """
         Devuelve el numero de veces que dos aristas se cruzan en el grafo
@@ -402,8 +411,7 @@ def main():
                         ('F', 'A'),
                         ('C', 'B'),
                         ('H', 'F')]
-    dimension = 400
-
+    dimension = 350
     # Y vamos a hacer un dibujo del grafo sin decirle como hacer para
     # ajustarlo.
     grafo_sencillo = problema_grafica_grafo(vertices_sencillo,
@@ -425,12 +433,102 @@ def main():
     print("\nUtilizando la calendarización por default")
     print("Costo de la solución encontrada: {}".format(costo_final))
     print("Tiempo de ejecución en segundos: {}".format(t_final - t_inicial))
+    
+    ### Calendarizacion geometrico
+    
+    T_ini = 2000
+    alpha = 0.995
+    calendarizador_geometrico = (T_ini * alpha**i for i in range(int(1e6)))
+
+    t_inicial = time.time()
+    solucion_geometrica = blocales.temple_simulado(
+        grafo_sencillo,
+        calendarizador=calendarizador_geometrico
+    )
+    t_final = time.time()
+    costo_geometrico = grafo_sencillo.costo(solucion_geometrica)
+    grafo_sencillo.dibuja_grafo(solucion_geometrica, "prueba_geometrica.gif")
+    print("\nUtilizando calendarización geométrica (T0 * alpha^i)")
+    print("Costo de la solución encontrada: {}".format(costo_geometrico))
+    print("Tiempo de ejecución en segundos: {}".format(t_final - t_inicial))
+
+    # Grafo feo con muchas aristas cruzadas y angulos muy pequeños 
+    vertices_feo = ['A', 'B', 'C', 'D', 'E', 'F']
+    aristas_feo = [('A', 'D'),
+                   ('B', 'E'),
+                   ('C', 'F'),
+                   ('E', 'C'),
+                   ('B', 'D'),
+                   ('C', 'E'),
+                   ('A', 'B'),
+                   ('D', 'F')]
+
+    grafo_feo = problema_grafica_grafo(vertices_feo, aristas_feo, dimension)
+
+    estado_feo = grafo_feo.estado_aleatorio()
+    grafo_feo.dibuja_grafo(estado_feo, "grafo_feo_inicial.gif")
+    print("\nGrafo feo costo inicial: {}".format(grafo_feo.costo(estado_feo)))
+
+    T_ini = 1000
+    alpha = 0.999
+    cal_feo = (T_ini * alpha**i for i in range(int(1e6)))
+
+    t_inicial = time.time()
+    solucion_feo = blocales.temple_simulado(grafo_feo, calendarizador=cal_feo)
+    t_final = time.time()
+
+    grafo_feo.dibuja_grafo(solucion_feo, "grafo_feo_final.gif")
+    print("Grafo feo costo final: {}".format(grafo_feo.costo(solucion_feo)))
+    print("Tiempo de ejecución en segundos: {}".format(t_final - t_inicial))
+    
+    ### Grafo dificil para comparar calendarizadores 
+vertices_dificil = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
+aristas_dificil = [
+    ('A', 'G'), ('B', 'I'), ('C', 'F'),
+    ('D', 'J'), ('E', 'H'), ('A', 'I'),
+    ('B', 'J'), ('C', 'G'), ('D', 'H'),
+    ('E', 'F'), ('A', 'J'), ('B', 'H'),
+    ('C', 'I'), ('D', 'F'), ('E', 'G'),
+    ('A', 'H'), ('B', 'F'), ('C', 'J'),
+    ('D', 'G'), ('E', 'I'), ('F', 'J'),
+]
+
+grafo_dificil = problema_grafica_grafo(vertices_dificil, aristas_dificil, 400)
+
+estado_dificil = grafo_dificil.estado_aleatorio()
+print("\nGrafo difícil - Costo inicial: {}".format(
+    grafo_dificil.costo(estado_dificil)))
+
+# Default
+t_inicial = time.time()
+sol_default = blocales.temple_simulado(grafo_dificil)
+t_final = time.time()
+print("Default Costo: {}  Tiempo: {}".format(
+    grafo_dificil.costo(sol_default), t_final - t_inicial))
+
+# Geométrico
+T_ini = 1000
+alpha = 0.999
+cal_dificil = (T_ini * alpha**i for i in range(int(1e9)))
+t_inicial = time.time()
+sol_geometrico = blocales.temple_simulado(grafo_dificil, 
+                                          calendarizador=cal_dificil)
+t_final = time.time()
+print("Geométrico Costo: {}  Tiempo: {}".format(
+    grafo_dificil.costo(sol_geometrico), t_final - t_inicial))
 
     # ¿Que valores para ajustar el temple simulado son los que mejor
     # resultado dan?
     #
+    ###
+    #Para la calendarizacion geometrica los mejores valores son una T_inicial alta, como 2000 que con 1000 da un resultado peor que el default y una alfa cercana a .999 para que no tarde tanto
+    ###
+    #
     # ¿Que encuentras en los resultados?, ¿Cual es el criterio mas importante?
     #
+    ###
+    #Para problemas siemples y pequeños ambos calendarizadores encuentras las solucion optima y solo varia el tiempo en el cual el gemetrico es mas rapido, para problemas difiles el geometrico encuentra una mejor solucion en menor tiempo, de los criterios mas importantes es el numero de cruces que es el que hace que objetivamente sea vea bien el grafo y los demas haces que se vea estetico
+    ###
     # En general para obtener mejores resultados del temple simulado,
     # es necesario utilizar una función de calendarización acorde con
     # el metodo en que se genera el vecino aleatorio.  Existen en la
@@ -442,7 +540,6 @@ def main():
     #
     # Inventate un grafo más feo y muestra como el temple simulado lo hace lucir mejor.
     #
-    # Escribe aqui tus conclusiones
     #
 
 
